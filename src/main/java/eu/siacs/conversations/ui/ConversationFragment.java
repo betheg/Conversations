@@ -54,6 +54,7 @@ import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureClicked;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureLongClicked;
 import eu.siacs.conversations.utils.UIHelper;
+import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ConversationFragment extends Fragment {
 
@@ -92,11 +93,9 @@ public class ConversationFragment extends Fragment {
 		}
 	};
 	protected ListView messagesView;
-	protected LayoutInflater inflater;
-	protected List<Message> messageList = new ArrayList<Message>();
+	protected List<Message> messageList = new ArrayList<>();
 	protected MessageAdapter messageListAdapter;
 	protected Contact contact;
-	protected String queuedPqpMessage = null;
 	private EditMessage mEditMessage;
 	private ImageButton mSendButton;
 	private RelativeLayout snackbar;
@@ -147,7 +146,7 @@ public class ConversationFragment extends Fragment {
 			}
 		}
 	};
-	private ConcurrentLinkedQueue<Message> mEncryptedMessages = new ConcurrentLinkedQueue<Message>();
+	private ConcurrentLinkedQueue<Message> mEncryptedMessages = new ConcurrentLinkedQueue<>();
 	private boolean mDecryptJobRunning = false;
 	private OnEditorActionListener mEditorActionListener = new OnEditorActionListener() {
 
@@ -191,7 +190,7 @@ public class ConversationFragment extends Fragment {
 		}
 		if (mEditMessage.getText().length() < 1) {
 			if (this.conversation.getMode() == Conversation.MODE_MULTI) {
-				conversation.setNextPresence(null);
+				conversation.setNextCounterpart(null);
 				updateChatMsgHint();
 			}
 			return;
@@ -200,10 +199,10 @@ public class ConversationFragment extends Fragment {
 				.toString(), conversation.getNextEncryption(activity
 				.forceEncryption()));
 		if (conversation.getMode() == Conversation.MODE_MULTI) {
-			if (conversation.getNextPresence() != null) {
-				message.setPresence(conversation.getNextPresence());
+			if (conversation.getNextCounterpart() != null) {
+				message.setCounterpart(conversation.getNextCounterpart());
 				message.setType(Message.TYPE_PRIVATE);
-				conversation.setNextPresence(null);
+				conversation.setNextCounterpart(null);
 			}
 		}
 		if (conversation.getNextEncryption(activity.forceEncryption()) == Message.ENCRYPTION_OTR) {
@@ -217,10 +216,10 @@ public class ConversationFragment extends Fragment {
 
 	public void updateChatMsgHint() {
 		if (conversation.getMode() == Conversation.MODE_MULTI
-				&& conversation.getNextPresence() != null) {
+				&& conversation.getNextCounterpart() != null) {
 			this.mEditMessage.setHint(getString(
 					R.string.send_private_message_to,
-					conversation.getNextPresence()));
+					conversation.getNextCounterpart().getResourcepart()));
 		} else {
 			switch (conversation.getNextEncryption(activity.forceEncryption())) {
 				case Message.ENCRYPTION_NONE:
@@ -280,11 +279,11 @@ public class ConversationFragment extends Fragment {
 					public void onContactPictureClicked(Message message) {
 						if (message.getStatus() <= Message.STATUS_RECEIVED) {
 							if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
-								if (message.getPresence() != null) {
-									highlightInConference(message.getPresence());
+								if (message.getCounterpart() != null) {
+									highlightInConference(message.getCounterpart().getResourcepart());
 								} else {
 									highlightInConference(message
-											.getCounterpart());
+											.getContact().getDisplayName());
 								}
 							} else {
 								Contact contact = message.getConversation()
@@ -299,7 +298,7 @@ public class ConversationFragment extends Fragment {
 						}  else {
 							Account account = message.getConversation().getAccount();
 							Intent intent = new Intent(activity, EditAccountActivity.class);
-							intent.putExtra("jid", account.getJid());
+							intent.putExtra("jid", account.getJid().toBareJid().toString());
 							startActivity(intent);
 						}
 					}
@@ -311,9 +310,7 @@ public class ConversationFragment extends Fragment {
 					public void onContactPictureLongClicked(Message message) {
 						if (message.getStatus() <= Message.STATUS_RECEIVED) {
 							if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
-								if (message.getPresence() != null) {
-									privateMessageWith(message.getPresence());
-								} else {
+								if (message.getCounterpart() != null) {
 									privateMessageWith(message.getCounterpart());
 								}
 							}
@@ -430,9 +427,9 @@ public class ConversationFragment extends Fragment {
 				.createNewConnection(message);
 	}
 
-	protected void privateMessageWith(String counterpart) {
+	protected void privateMessageWith(final Jid counterpart) {
 		this.mEditMessage.setText("");
-		this.conversation.setNextPresence(counterpart);
+		this.conversation.setNextCounterpart(counterpart);
 		updateChatMsgHint();
 	}
 
@@ -466,7 +463,7 @@ public class ConversationFragment extends Fragment {
 		this.activity = (ConversationActivity) getActivity();
 		this.conversation = conversation;
 		if (this.conversation.getMode() == Conversation.MODE_MULTI) {
-			this.conversation.setNextPresence(null);
+			this.conversation.setNextCounterpart(null);
 		}
 		this.mEditMessage.setText("");
 		this.mEditMessage.append(this.conversation.getNextMessage());
@@ -836,7 +833,7 @@ public class ConversationFragment extends Fragment {
 
 						@Override
 						public void onPresenceSelected() {
-							message.setPresence(conversation.getNextPresence());
+							message.setCounterpart(conversation.getNextCounterpart());
 							xmppService.sendMessage(message);
 							messageSent();
 						}
