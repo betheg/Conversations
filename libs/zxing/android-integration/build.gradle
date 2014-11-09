@@ -1,0 +1,6 @@
+apply plugin: 'java'
+
+dependencies {
+	testCompile group: 'junit', name: 'junit', version: '4.11'
+	compile 'com.google.android:android:4.0.1.2'
+}

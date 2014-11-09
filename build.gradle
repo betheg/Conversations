@@ -22,20 +22,26 @@ apply plugin: 'com.android.application'
 repositories {
 	jcenter()
 	mavenCentral()
-	maven {
-		url "http://jitsi.github.com/otr4j/repository/"
-	}
 }
 
 dependencies {
 	compile project(':libs:minidns')
 	compile project(':libs:openpgp-api-lib')
 	compile project(':libs:MemorizingTrustManager')
+	compile project(':libs:otr4j')
+	compile project(':libs:zxing:android-integration')
+	compile project(':libs:zxing:core')
+
 	compile 'com.android.support:support-v13:19.1.0'
-	compile 'org.bouncycastle:bcprov-jdk15on:1.50'
-	compile 'net.java:otr4j:0.21'
-	compile 'com.google.zxing:core:3.1.0'
-	compile 'com.google.zxing:android-integration:3.1.0'
+}
+
+project(':libs:bouncycastle:core') {
+	apply plugin: 'java'
+	test.enabled = false
+	jar {
+		exclude('org/bouncycastle/util/test',
+			'org/bouncycastle/crypto/examples')
+	}
 }
 
 android {

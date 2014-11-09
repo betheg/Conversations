@@ -1,5 +1,9 @@
 include ':libs:MemorizingTrustManager'
 include ':libs:minidns'
 include ':libs:openpgp-api-lib'
+include ':libs:bouncycastle:core'
+include ':libs:otr4j'
+include ':libs:zxing:android-integration'
+include ':libs:zxing:core'
 
 rootProject.name = 'Conversations'
